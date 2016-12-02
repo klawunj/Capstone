@@ -18,3 +18,19 @@
 /*****************************************************************************
  *                                 Functions
  ****************************************************************************/
+
+int getSensorReading(int s){
+	int temp;
+	//get value from source s
+
+	return temp;
+
+
+}
+
+void processSensorReading(int s){
+	int temp;
+
+	temp = getSensorReading(s);
+
+}

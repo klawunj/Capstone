@@ -23,5 +23,6 @@
 /*****************************************************************************
  *                             Function Prototypes
  ****************************************************************************/
+void processImage(int i); // int is place holder for whatever type of data images will come in
 
 #endif /* INCLUDES_IMAGEREC_H_ */

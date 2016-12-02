@@ -23,5 +23,7 @@
 /*****************************************************************************
  *                             Function Prototypes
  ****************************************************************************/
+int getSensorReading(int s); // place holder since don't know what types of sensors and how many
+void processSensorReading(int s);
 
 #endif /* INCLUDES_SENSOR_H_ */

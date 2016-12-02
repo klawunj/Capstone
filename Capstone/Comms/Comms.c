@@ -19,3 +19,15 @@
  *                                 Functions
  ****************************************************************************/
 
+void sendMessage(message m){
+
+}
+
+void getMessage(){
+
+}
+
+void processMeassage(message m){
+
+}
+

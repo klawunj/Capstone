@@ -1,6 +1,17 @@
-// Test to convert a color image to gray
-// Build on Linux with:
-// g++ test_2.cpp -o test_2 -lopencv_core -lopencv_imgcodecs -lopencv_imgproc -lopencv_highgui
+/*---------------------------------------------------------------------*\
+	Lane Detection
+	Edits(2017-02-14)==>Nabil Hamza
+			
+	For laneimages.cpp run:
+	g++ `pkg-config --libs opencv` laneimages.cpp -o laneimages
+	./laneimages original.bmp
+
+	You can use any picture for the original image, and in the laneimages.cpp file
+	There are some commented imwrite() functions you can uncomment to see the 
+	image proccessing steps
+
+	Probably will look into a more roubust alcorithim in the future
+\*---------------------------------------------------------------------*/
 
 #include <opencv2/opencv.hpp>
 #include "opencv2/imgcodecs.hpp"

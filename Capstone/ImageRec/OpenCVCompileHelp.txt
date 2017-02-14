@@ -1,0 +1,7 @@
+CC=g++
+CFLAGS=-O2 -g `pkg-config --cflags opencv`
+LIBFLAGS=`pkg-config --libs opencv`
+
+Use above for compiling when looking for the correct libs/cflags
+Makes life way easier.....
+

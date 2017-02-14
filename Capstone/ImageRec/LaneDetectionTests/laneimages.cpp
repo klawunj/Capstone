@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include "linefinder.h"
 
+#define PI 3.1415926
+
 using namespace cv;
 
 int main(int argc, char* argv[]) {

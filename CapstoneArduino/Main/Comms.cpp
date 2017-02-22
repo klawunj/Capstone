@@ -2,6 +2,7 @@
  *                                 Includes
  ****************************************************************************/
 #include "Comms.h"
+#include "Arduino.h"
 /*****************************************************************************
  *                             Global Variables
  ****************************************************************************/
@@ -19,10 +20,10 @@
  }
 
  DriveCommands GetDriveCommands(){
-  String DriveCommand;
+  String InputBuffer;
   
- if (Serial.available()){
-    DriveCommand = Serial.read();
+  if (Serial.available()){
+    InputBuffer = Serial.read();
   }
 
   

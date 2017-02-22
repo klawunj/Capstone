@@ -18,7 +18,7 @@ FSMVars FSM;
   FSM.CurrentSpeed = 0;
   FSM.CurrentServoPos = 0;
   InitDrive();
-  //InitComms();
+  InitComms();
  }
 
  void DoStandByState(){

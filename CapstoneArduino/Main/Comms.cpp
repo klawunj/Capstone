@@ -56,8 +56,8 @@
   //If there is #, end of message
   else if (conIB == -13){
     //Turn strings to integers, set output to integers
-    output.Speed() = Speed.toInt();
-    output.Turn() = Turn.toInt();
+    output.Speed = Speed.toInt();
+    output.Turn = Turn.toInt();
       
     //reset values
     conIB = 0; Speed = ""; Turn = ""; count = 0; variable = 0;

@@ -20,6 +20,7 @@
  }
 
  DriveCommands GetDriveCommands(){
+  DriveCommands output;
   String InputBuffer;
   
   if (Serial.available()){

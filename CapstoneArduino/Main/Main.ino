@@ -19,20 +19,8 @@ void setup() {
 }
 
 void loop() {
- //Main();
-SetSpeed(10);
-//SetSteering(8);
-//delay(3000);
-//
-//SetSteering(0);
-//delay(3000);
-//
-//SetSteering(-7);
-//delay(3000);
-//
-//SetSteering(0);
-//SetSpeed(30);
-//delay(3000);
+ Main();
+
  
 
 }

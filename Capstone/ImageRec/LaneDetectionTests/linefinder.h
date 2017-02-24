@@ -105,7 +105,7 @@ class LineFinder {
 			  cv::Point pt2((*it2)[2],(*it2)[3]+shift);
 
 			  cv::line( image, pt1, pt2, color, 6 );
-		std::cout << " HoughP line: ("<< pt1 <<"," << pt2 << ")\n"; 
+		//std::cout << "HoughP line: ("<< pt1 <<"," << pt2 << ")\n"; 
 			  ++it2;	
 		  }
 	  }

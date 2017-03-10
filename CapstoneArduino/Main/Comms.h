@@ -46,5 +46,5 @@ typedef struct {
  DriveCommands GetDriveCommands();
  void transmit(int message); 
  int receive();
- void InterMessage(int message);
+ MESSAGE InterMessage(int NEWMessage);
  int MessageCreation(int InterState, int Direction);

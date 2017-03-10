@@ -35,7 +35,7 @@
 #define servopin 10
 #define MaxSpeed 45
 #define MinSpeed 0
-#define MaxRightServoPos 20
+#define MaxRightServoPos 36
 #define MaxLeftServoPos 0
 /*****************************************************************************
  *                             Function Prototypes

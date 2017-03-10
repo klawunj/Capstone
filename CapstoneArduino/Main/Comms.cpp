@@ -19,7 +19,7 @@
  const uint64_t pipe2 = 0xF8F8E0E0F2LL;
  long CarID = 3;
  FSMVarsInt CurrentState;
- MESSAGE OtherCarMessage;
+ 
 
  /*****************************************************************************
  *                                 Functions
@@ -173,8 +173,10 @@ int MessageCreation(int InterState, int Direction){
 }
 
 
- void InterMessage(int message){
-  OtherCarMessage.CarID = (message%64)/8;
-  OtherCarMessage.CarState = (message%8)/4;
-  OtherCarMessage.CarDirection = message%4;
+ MESSAGE InterMessage(int NewMessage){
+  MESSAGE IncomingMessage;
+  OtherCarMessage.CarID = (NewMessage%64)/8;
+  OtherCarMessage.CarState = (NewMessage%8)/4;
+  OtherCarMessage.CarDirection = NewMessage%4;
+  return IncomingMessage;
 }

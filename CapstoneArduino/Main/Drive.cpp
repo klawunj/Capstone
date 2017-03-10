@@ -24,7 +24,7 @@ PIController SteeringController;
   Steering.attach(servopin);
 
   SetSpeed(0);
-  SetSteering(0);
+  SetSteering(18);
 
  }
 
@@ -68,7 +68,7 @@ PIController SteeringController;
 
  }
 
-// servo pos must be value from 0 - 20
+// servo pos must be value from 0 - 36
  void SetSteering(int UnMappedServoPos){
 
   int MappedServoPos;
@@ -81,7 +81,7 @@ PIController SteeringController;
     UnMappedServoPos = MaxLeftServoPos;
   }
 
-  MappedServoPos = UnMappedServoPos + 20; //conversion factor actual center is 30
+  MappedServoPos = UnMappedServoPos + 26; //conversion factor actual center is 30
 
   Steering.write(MappedServoPos);
   
@@ -112,10 +112,10 @@ PIController SteeringController;
     else{
       
       if(NewVal != SteeringController.OldSetpoint){
-          SteeringController.StartValue = (20 - CurrentVal);
+          SteeringController.StartValue = (MaxRightServoPos - CurrentVal);
       }
 
-      error = (20 - NewVal) - (20 - CurrentVal);
+      error = (MaxRightServoPos - NewVal) - (MaxRightServoPos - CurrentVal);
     }
   }
 
@@ -136,7 +136,7 @@ PIController SteeringController;
     error = NewVal - CurrentVal;  
     
   }
-  if(error >= 3 || error <= -3){
+  if(error >= 3){
     if(Mode == SPEED){
       SpeedController.previousIntegral += error*SpeedController.looptime;
       der = (error - SpeedController.previousError)/SpeedController.looptime;
@@ -151,7 +151,7 @@ PIController SteeringController;
       
       if((NewVal - CurrentVal) < 0){
 
-        if((90 - output) <= 4){
+        if((90 - output) <= 2){
           output = 0;
         }
         
@@ -166,7 +166,7 @@ PIController SteeringController;
       
       else{
         
-        if(output <= 4){
+        if(output <= 2){
           output = 0;
         }
 
@@ -191,7 +191,7 @@ PIController SteeringController;
 
       if((NewVal - CurrentVal) < 0){
 
-        output = (20 - output);
+        output = (MaxRightServoPos - output);
 
         SetSteering(output);
         return output;

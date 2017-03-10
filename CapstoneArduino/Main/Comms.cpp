@@ -5,10 +5,21 @@
 #include "Arduino.h"
 #include <SoftwareSerial.h>
 #include <stdlib.h>
+#include <SPI.h>
+#include "nRF24L01.h"
+#include "RF24.h"
 /*****************************************************************************
  *                             Global Variables
  ****************************************************************************/
- 
+ int InMsg[1];
+ int OutMsg[1];
+ RF24 radioRecieve(9,10);
+ RF24 radioTransmit(5,6);
+ const uint64_t pipe1 = 0xE8E8F0F0E1LL;
+ const uint64_t pipe2 = 0xF8F8E0E0F2LL;
+ long CarID = 3;
+ FSMVarsInt CurrentState;
+ MESSAGE OtherCarMessage;
 
  /*****************************************************************************
  *                                 Functions
@@ -16,8 +27,14 @@
 
  void InitComms(){
   Serial.begin(9600);
-  while(!Serial){
-  }
+  radioRecieve.begin();
+  radioTransmit.begin();
+  radioRecieve.openReadingPipe(1,pipe2);
+  radioRecieve.startListening();
+  radioTransmit.openWritingPipe(pipe1);
+  CurrentState.State = NotNear;
+  InMsg[0] = 0;
+  OutMsg[0] = 0;
  }
 
 DriveCommands GetDriveCommands(){
@@ -96,4 +113,68 @@ DriveCommands GetDriveCommands(){
     }
   }
  }
+}
+
+ void IntersectionFSM(){
+  switch (CurrentState.State){
+    
+    case Stopped:
+      
+    break;
+
+    case Proceed:
+      
+    break;
+
+    case Clear:
+     
+    break;
+
+    case NotNear:
+      
+    break;
+
+    case Blocked:
+      
+    break;
+    
+    default:
+    break;
+  }
+ }
+
+
+  
+ 
+
+  int receive(){  //Recieves message and returns value
+  if (radioRecieve.available()){
+    while (radioRecieve.available()){
+      radioRecieve.read(InMsg, 1);     
+    }
+  }
+
+  else{
+    
+    InMsg[0] = 0;
+  }
+  return InMsg[0];
+}
+
+
+ void transmit(int message){  //Call with message to be transmitted
+  OutMsg[0] = message;
+  radioTransmit.write(OutMsg, 1);
+}
+
+int MessageCreation(int InterState, int Direction){
+  int FinalMessage = CarID*8 + InterState*4 + Direction; //makes the binary version of the required message breaks if inproper values are used
+  return FinalMessage;
+}
+
+
+ void InterMessage(int message){
+  OtherCarMessage.CarID = (message%64)/8;
+  OtherCarMessage.CarState = (message%8)/4;
+  OtherCarMessage.CarDirection = message%4;
 }

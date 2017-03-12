@@ -50,7 +50,8 @@ class LineFinder {
 	  double maxGap;
 
 	  // distance to shift the drawn lines down when using a ROI
-	  int shift;
+	  int shiftV;
+	  int shiftH;
 
   public:
 
@@ -78,10 +79,16 @@ class LineFinder {
 		  maxGap= gap;
 	  }
 
-	  // set image shift
-	  void setShift(int imgShift) {
+	  // set vertical image shift
+	  void setShiftV(int imgShift) {
 
-		  shift = imgShift;
+		  shiftV = imgShift;
+	  }
+	  
+	  // set horizontal image shift
+	  void setShiftH(int imgShift) {
+
+		  shiftH = imgShift;
 	  }
 
 	  // Apply probabilistic Hough Transform
@@ -101,8 +108,8 @@ class LineFinder {
 	
 		  while (it2!=lines.end()) {
 		
-			  cv::Point pt1((*it2)[0],(*it2)[1]+shift);        
-			  cv::Point pt2((*it2)[2],(*it2)[3]+shift);
+			  cv::Point pt1((*it2)[0]+shiftH,(*it2)[1]+shiftV);        
+			  cv::Point pt2((*it2)[2]+shiftH,(*it2)[3]+shiftV);
 
 			  cv::line( image, pt1, pt2, color, 6 );
 		//std::cout << "HoughP line: ("<< pt1 <<"," << pt2 << ")\n"; 

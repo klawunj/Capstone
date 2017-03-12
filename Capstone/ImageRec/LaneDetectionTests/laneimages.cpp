@@ -63,10 +63,10 @@ int main(int argc, char* argv[]) {
 	std::cout << image.cols << std::endl; // # Of cols in image
 	std::cout << image.rows << std::endl; // # Of rows in image
 	
-	int top = 0;
-    int left = 0;
-    int width = image.cols - 1;
-    int height = image.rows - 1;
+	int top = (image.cols)/4 - 1;
+    int left = (image.rows)/4 - 1;
+    int width = (image.cols)/2  - 1;
+    int height = 3*(image.rows)/4  - 1;
 	
 	Rect roi(top,left,width,height);// set the ROI for the image
 	Mat imgROI = image(roi);
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 	imwrite("contour.png", contoursInv);
 	//--------------------Hough Transform-----------------------//
 	std::vector<Vec2f> lines;
-	int houghVote = 50; // HoughLines threshold value (higher ==> less lines, lower ==> more lines)
+	int houghVote = 100; // HoughLines threshold value (higher ==> less lines, lower ==> more lines)
 	
 	/* // Loop for determining proper houghVote
 	if (houghVote < 1 or lines.size() > 2){ // we lost all lines. reset 
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
 		float theta= (*it)[1]; // second element is angle theta
 		
 		// filter to remove vertical and horizontal lines
-		if ( theta > (0*(PI/180)) && theta < (75*(PI/180)) || theta < (180*(PI/180)) && theta > (105*(PI/180)) ) { 
+		if ( theta > (5*(PI/180)) && theta < (75*(PI/180)) || theta < (175*(PI/180)) && theta > (105*(PI/180)) ) { 
 		
 			// point of intersection of the line with first row
 			Point pt1(rho/cos(theta),0);        
@@ -130,14 +130,15 @@ int main(int argc, char* argv[]) {
 	LineFinder ld;
 
     // Set probabilistic Hough parameters
-	ld.setLineLengthAndGap(60,10);
-	ld.setMinVote(2);
-
+	ld.setLineLengthAndGap(50,15);
+	ld.setMinVote(6);
+	
     // Detect lines
 	
 	std::vector<Vec4i> li= ld.findLines(contours);
 	Mat houghP(imgROI.size(),CV_8U,Scalar(0));
-	ld.setShift(left);
+	
+	
 	//std::cout << "HoughP Lines" << "\n";
 	ld.drawDetectedLines(houghP);
 	
@@ -156,12 +157,14 @@ int main(int argc, char* argv[]) {
 	Canny(houghPinv,contours,150,350);
 	li= ld.findLines(contours);
 
-	imwrite("contours2.png", contoursInv);
+	//imwrite("contours2.png", contoursInv);
 	
 	// Set probabilistic Hough parameters
 	ld.setLineLengthAndGap(5,2);
 	ld.setMinVote(1);
-	ld.setShift(left);
+	//Use shifts when drawing on a non ROI image
+	ld.setShiftV(left);
+	ld.setShiftH(top);
 	//std::cout << "Original Bitwise" << "\n";
 	ld.drawDetectedLines(image);
 	

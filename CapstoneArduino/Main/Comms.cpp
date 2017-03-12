@@ -175,8 +175,8 @@ int MessageCreation(int InterState, int Direction){
 
  MESSAGE InterMessage(int NewMessage){
   MESSAGE IncomingMessage;
-  OtherCarMessage.CarID = (NewMessage%64)/8;
-  OtherCarMessage.CarState = (NewMessage%8)/4;
-  OtherCarMessage.CarDirection = NewMessage%4;
+  IncomingMessage.CarID = (NewMessage%64)/8;
+  IncomingMessage.CarState = (NewMessage%8)/4;
+  IncomingMessage.CarDirection = NewMessage%4;
   return IncomingMessage;
 }

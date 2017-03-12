@@ -3,7 +3,6 @@
  ****************************************************************************/
 #include "Comms.h"
 #include "Arduino.h"
-#include <SoftwareSerial.h>
 #include <stdlib.h>
 #include <SPI.h>
 #include "nRF24L01.h"
@@ -17,8 +16,6 @@
  RF24 radioTransmit(5,6);
  const uint64_t pipe1 = 0xE8E8F0F0E1LL;
  const uint64_t pipe2 = 0xF8F8E0E0F2LL;
- long CarID = 3;
- FSMVarsInt CurrentState;
  
 
  /*****************************************************************************
@@ -26,128 +23,102 @@
  ****************************************************************************/
 
  void InitComms(){
-  Serial.begin(9600);
+  Serial2.begin(9600);
   radioRecieve.begin();
   radioTransmit.begin();
   radioRecieve.openReadingPipe(1,pipe2);
   radioRecieve.startListening();
   radioTransmit.openWritingPipe(pipe1);
-  CurrentState.State = NotNear;
   InMsg[0] = 0;
   OutMsg[0] = 0;
  }
+
+void PingBB(){
+  Serial2.write("\n");
+}
 
 DriveCommands GetDriveCommands(){
   //output
   DriveCommands output;
   //Variables
-  //Variables
   String inputBuffer;//variable to get the serial value
   int conIB;//store the integer value of the serial value
   String Speed = "";//store the integer speed value
   String Turn = "";//store the turn value
-  int intSpeed, intTurn;
+  String Direction = "";
+  int intSpeed, intTurn, intDirec;
+  int variable = 0;//signifies the switch between speed and turn when reading values
   
   //Flags and checks
-  int count = 0;//ensure that each character is read only once
   bool flag = 0;//ensure that full message is only printed once
-  bool variable = 0;//signifies the switch between speed and turn when reading values
+  bool ping = 1;
 
   while (1){
-    if(Serial.available()){
-    inputBuffer = Serial.read();
+
+    if(ping == 1){
+      PingBB();
     }
+    
+    if(Serial2.available()){
+      inputBuffer = Serial2.read();
+      ping = 0;
 
-    conIB = inputBuffer.toInt();
-    conIB = conIB - 48; //convert ascii values to usable numbers
+      conIB = inputBuffer.toInt();
+      conIB = conIB - 48; //convert ascii values to usable numbers
 
-    //If there is a space, switch which variable written to
-    if(conIB == -16 && count == 0){
-      variable = 1;
-      count++;
-    }
+       //If there is a space, switch which variable written to
+      if(conIB == -16){
+        
+        if(variable == 0){
+          variable = 1;
+        }
+        
+        else{
+          variable = 2;
+        }
+        
+      }
 
-    //if there is a precent sign, new character
-    else if (conIB == -11){
-      count = 0;
-    }
+       //If there is #, means end of message
+      else if (conIB == -13){
+        //check if the first time sent
+        if (flag == 0){
+          intSpeed = Speed.toInt();
+          intTurn = Turn.toInt();
+          intDirec = Direction.toInt();
+          output.Speed = intSpeed;
+          output.Turn = intTurn;
+          output.Direction = intDirec;
 
-    //If there is #, means end of message
-    else if (conIB == -13){
-      //check if the first time sent
-      if (flag==0){
+          //return value
+          return output;
+        }
+      }
 
-        intSpeed = Speed.toInt();
-        intTurn = Turn.toInt();
-        output.Speed = intSpeed;
-        output.Turn = intTurn;
+       //Add the number value to the message
+      else{
+        if(conIB >= 0){
+          if (variable == 0){
+            Speed = Speed+conIB;
+          }
+        
+          else if(variable == 1){
+            Turn = Turn+conIB;
+          }
 
-        //reset values
-        conIB = 0;
-        Speed = "";
-        Turn = "";
-        flag = 1;
-        count = 0;
-        variable = 0;
-
-        //return value
-        return output;
+          else{
+            Direction = Direction + conIB;
+          }
+        
+          flag = 0;
+        }
       }
     }
-
-    //if there is a negative sign, put a negative sign
-    else if (conIB == -3 && count == 0){
-      if (variable ==1){Turn = Turn+"-";}
-      else{Speed = Speed+"-";}
-      count++;
-      flag = 0;
-    }
-
-    //Add the number value to the message
-    else{
-      if(conIB >= 0 && count == 0 ){
-        if (variable ==1){Turn = Turn+conIB;}
-        else{Speed = Speed+conIB;}
-        count++;
-        flag = 0;
-    }
-  }
  }
 }
 
- void IntersectionFSM(){
-  switch (CurrentState.State){
-    
-    case Stopped:
-      
-    break;
 
-    case Proceed:
-      
-    break;
-
-    case Clear:
-     
-    break;
-
-    case NotNear:
-      
-    break;
-
-    case Blocked:
-      
-    break;
-    
-    default:
-    break;
-  }
- }
-
-
-  
- 
-
-  int receive(){  //Recieves message and returns value
+ int receive(){  //Recieves message and returns value
   if (radioRecieve.available()){
     while (radioRecieve.available()){
       radioRecieve.read(InMsg, 1);     
@@ -168,7 +139,7 @@ DriveCommands GetDriveCommands(){
 }
 
 int MessageCreation(int InterState, int Direction){
-  int FinalMessage = CarID*8 + InterState*4 + Direction; //makes the binary version of the required message breaks if inproper values are used
+  int FinalMessage = CarId*8 + InterState*4 + Direction; //makes the binary version of the required message breaks if inproper values are used
   return FinalMessage;
 }
 

@@ -28,7 +28,7 @@ int main()
 	cout<< Buffer << endl;
 	cout<< Ret << endl;
 	
-	Ret=LS.WriteString("STOP");                                             
+	Ret=LS.WriteString("0 36 1#");                                             
 	if (Ret!=1) {                                                           
 		cout<<"Error while writing data\n";                              
 		return Ret;                                                         

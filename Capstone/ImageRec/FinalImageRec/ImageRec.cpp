@@ -43,6 +43,189 @@
 using namespace cv;
 using namespace std;
 
+void maxGapFinder (double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int xMID, int xSHIFT, int ySHIFT , vector<Vec4i> LINES){
+//Here we add the shifts and sort the coordinates by comparing Y values
+
+	double sortedLINES[LINES.size()][4];
+	for (int i=0; i<LINES.size(); ++i){
+		double x1 = LINES[i][0] + xSHIFT;
+		double y1 = LINES[i][1] + ySHIFT;
+		double x2 = LINES[i][2] + xSHIFT;
+		double y2 = LINES[i][3] + ySHIFT;
+		
+		double YHigh = 0.0;
+		double XHigh = 0.0;
+		double YLow = 0.0;
+		double XLow = 0.0;
+		
+		//The Higher Y Value is Lower on the Frame, but has a higher value
+		//The X values are only orientated with the Y values, so XHigh is not
+		//Always higher than Xlow
+		if ( y2 > y1 ){
+			YHigh = y2;
+			XHigh = x2;
+			YLow = y1;
+			XLow = x1;
+		}else {
+			YHigh = y1;
+			XHigh = x1;
+			YLow = y2;
+			XLow = x2;
+		}
+		
+		sortedLINES[i][0] = XHigh;
+		sortedLINES[i][1] = YHigh;
+		sortedLINES[i][2] = XLow;
+		sortedLINES[i][3] = YLow;
+	}
+	
+	int c,d;
+	double swap;
+	
+	for (c = 0 ; c < ( LINES.size() - 1 ); c++) {
+		for (d = 0 ; d < LINES.size() - c - 1; d++) {
+			if (sortedLINES[d][0] > sortedLINES[d+1][0]) {
+				swap = sortedLINES[d][0];
+				sortedLINES[d][0] = sortedLINES[d+1][0];
+				sortedLINES[d+1][0] = swap;
+			}
+		}
+	}
+	int lineMarker;
+	double X1,X2;
+	double GAP = 0;
+	for (int i=0; i<LINES.size() + 1; ++i){
+		if (i == 0){
+			X1 = 0;
+			X2 = sortedLINES[i][0];
+		}else if(i == LINES.size()){
+			X1 = sortedLINES[i-1][0];
+			X2 = WIDTH + xSHIFT;
+		}else{
+			X1 = sortedLINES[i-1][0];
+			X2 = sortedLINES[i][0];
+		}
+		if ( (X2 - X1) > GAP){
+			GAP = X2 - X1;
+			lineMarker = i;	
+		}
+	}
+	
+	if (lineMarker == 0){
+		XLEFT = 0.0;
+		XRIGHT = sortedLINES[0][0];
+	}else if( lineMarker == LINES.size()){
+		XLEFT = sortedLINES[lineMarker-1][0];
+		XRIGHT = WIDTH + xSHIFT;
+	}else{
+		XLEFT = sortedLINES[lineMarker-1][0];
+		XRIGHT = sortedLINES[lineMarker][0];
+	}
+	
+}
+void slopemaxGapFinder (double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int xMID, int xSHIFT, int ySHIFT , vector<Vec4i> LINES){
+//Here we add the shifts and sort the coordinates by comparing Y values
+	
+	double sortedSlopeLINES[LINES.size()];
+	double sortedLINES[LINES.size()][4];
+	for (int i=0; i<LINES.size(); ++i){
+		double x1 = LINES[i][0] + xSHIFT;
+		double y1 = LINES[i][1] + ySHIFT;
+		double x2 = LINES[i][2] + xSHIFT;
+		double y2 = LINES[i][3] + ySHIFT;
+		
+		double YHigh = 0.0;
+		double XHigh = 0.0;
+		double YLow = 0.0;
+		double XLow = 0.0;
+		
+		//The Higher Y Value is Lower on the Frame, but has a higher value
+		//The X values are only orientated with the Y values, so XHigh is not
+		//Always higher than Xlow
+		if ( y2 > y1 ){
+			YHigh = y2;
+			XHigh = x2;
+			YLow = y1;
+			XLow = x1;
+		}else {
+			YHigh = y1;
+			XHigh = x1;
+			YLow = y2;
+			XLow = x2;
+		}
+		
+		double slope;
+		
+		// Avoid Infinity or zero in calculations
+		if ( YHigh == YLow){
+			slope = 0;
+		} else if (XHigh == XLow){
+			slope = 9999;
+		} else {
+			slope = (YHigh - YLow)/(XHigh - XLow);
+		}
+		
+		sortedLINES[i][0] = XHigh;
+		sortedLINES[i][1] = YHigh;
+		sortedLINES[i][2] = XLow;
+		sortedLINES[i][3] = YLow;
+		
+		sortedSlopeLINES[i] = slope;
+	}
+	
+	int c,d;
+	double swap, swap2;
+	
+	for (c = 0 ; c < ( LINES.size() - 1 ); c++) {
+		for (d = 0 ; d < LINES.size() - c - 1; d++) {
+			if (sortedLINES[d][0] > sortedLINES[d+1][0]) {
+				swap = sortedLINES[d][0];
+				swap2 = sortedSlopeLINES[d];
+				sortedLINES[d][0] = sortedLINES[d+1][0];
+				sortedSlopeLINES[d] = sortedSlopeLINES[d+1];
+				sortedLINES[d+1][0] = swap;
+				sortedSlopeLINES[d+1] = swap2;
+			}
+		}
+	}
+	int lineMarker;
+	int X1,X2;
+	int GAP = 0;
+	for (int i=0; i<LINES.size() + 1; ++i){
+		if (i == 0){
+			X1 = 0;
+			X2 = sortedLINES[i][0];
+		}else if(i == LINES.size()){
+			X1 = sortedLINES[i-1][0];
+			X2 = WIDTH + xSHIFT;
+		}else{
+			X1 = sortedLINES[i-1][0];
+			X2 = sortedLINES[i][0];
+		}
+		if ( ((X2 - X1) > GAP )){
+			if ((sortedSlopeLINES[i-1] >= 0) && (X2 >= WIDTH + xSHIFT)){
+			} else if ((sortedSlopeLINES[i] <=  0) && (X1 == 0)){
+			} else {
+				GAP = X2 - X1;
+				lineMarker = i;
+			}
+		}
+	}
+	
+	if (lineMarker == 0){
+		XLEFT = 0.0;
+		XRIGHT = sortedLINES[0][0];
+		cout << sortedSlopeLINES[0] << endl;
+	}else if( lineMarker == LINES.size()){
+		XLEFT = sortedLINES[lineMarker-1][0];
+		XRIGHT = WIDTH + xSHIFT;
+	}else{
+		XLEFT = sortedLINES[lineMarker-1][0];
+		XRIGHT = sortedLINES[lineMarker][0];
+	}
+	
+}
+
 void intersectionFinder( double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int xMID, int xSHIFT, int ySHIFT , vector<Vec4i> LINES){
 	
 	// Intersection Finder 
@@ -77,7 +260,7 @@ void intersectionFinder( double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int
 		if ( YHigh == YLow){
 			LRtemp = XHigh;
 		} else if (XHigh == XLow){
-			LRtemp = YHigh;
+			LRtemp = XHigh;
 		} else {
 			slope = (YHigh - YLow)/(XHigh - XLow);
 			b = YHigh - slope*XHigh;
@@ -93,16 +276,29 @@ void intersectionFinder( double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int
 					}
 				}
 			// RIGHT POINT
-			}else if ( XHigh > xMID/2 && XLow > xMID/2) {  
+			}else if ( XHigh > xMID*1.5 && XLow > xMID*1.5) {  
 				if ( YHigh > yAXIS && YLow < yAXIS) {	
 					if ( (LRtemp < WIDTH + xSHIFT) && (LRtemp < XRIGHT)){
 						XRIGHT = LRtemp;
 					}
 				}
+			}else { // Middle Quadrants
+				if ( YHigh > yAXIS && YLow < yAXIS) {
+					if (slope > 2 ){
+						if ( (LRtemp > 0.0 + xSHIFT) && (LRtemp > XLEFT)){
+							XLEFT = LRtemp;
+						}
+					}else{
+						if ( (LRtemp < WIDTH + xSHIFT) && (LRtemp < XRIGHT)){
+							XRIGHT = LRtemp;
+						}
+					}
+				}
 			}
+			
 		} else { // RIGHT ANGLE LINE
 			// LEFT POINT
-			if ( XHigh < xMID*1.5 && XLow < xMID*1.5){
+			if ( XHigh < xMID/2 && XLow < xMID/2){
 				if ( YHigh > yAXIS && YLow < yAXIS) {	
 					if ( (LRtemp > 0.0 + xSHIFT) && (LRtemp > XLEFT)){
 						XLEFT = LRtemp;
@@ -113,6 +309,18 @@ void intersectionFinder( double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int
 				if ( YHigh > yAXIS && YLow < yAXIS) {	
 					if ( (LRtemp < WIDTH + xSHIFT) && (LRtemp < XRIGHT)){
 						XRIGHT = LRtemp;
+					}
+				}
+			}else { // Middle Quadrants
+				if ( YHigh > yAXIS && YLow < yAXIS) {
+					if (slope < -2 ){
+						if ( (LRtemp < WIDTH + xSHIFT) && (LRtemp < XRIGHT)){
+							XRIGHT = LRtemp;
+						}
+					}else{
+						if ( (LRtemp > 0.0 + xSHIFT) && (LRtemp > XLEFT)){
+							XLEFT = LRtemp;
+						}
 					}
 				}
 			}
@@ -132,7 +340,9 @@ int main(int argc, char* argv[]) {
     if(!capture.isOpened()){
 	    cout << "Failed to connect to the camera." << endl;
     }
-	
+	int countBuff = 0;
+	int tempAngle;
+	int firstrunFlag = 0;
 	
 	//int frames=10;
 	while(1){
@@ -149,7 +359,7 @@ int main(int argc, char* argv[]) {
 		
 		int ROIx = 0;
 		int ROIy = (image.rows - 1)/8;
-		int width = image.cols - 1;
+		int width = image.cols - 1 - 40;
 		int height = (image.rows - 1)/8;
 		
 		Rect roi(ROIx,ROIy,width,height);// set the ROI for the image
@@ -157,7 +367,7 @@ int main(int argc, char* argv[]) {
 		
 		// Canny algorithm
 		Mat contours;
-		Canny(imgROI,contours,150,350);
+		Canny(imgROI,contours,50,150);
 		Mat contoursInv;
 		threshold(contours,contoursInv,128,255,THRESH_BINARY_INV);
 		
@@ -167,8 +377,8 @@ int main(int argc, char* argv[]) {
 		LineFinder ld;
 
 		// Set probabilistic Hough parameters
-		ld.setLineLengthAndGap(30,25);
-		ld.setMinVote(30);
+		ld.setLineLengthAndGap(15,10);
+		ld.setMinVote(15);
 		
 		ld.setShiftV(ROIy);
 		ld.setShiftH(ROIx);
@@ -185,7 +395,7 @@ int main(int argc, char* argv[]) {
 		
 		double XLEFT = 0.0 + ROIx;
 		double XRIGHT = width + ROIx;
-		
+		/*
 		int count = 0;
 		
 		while ( XLEFT == 0.0 + ROIx || XRIGHT == width + ROIx){
@@ -196,12 +406,34 @@ int main(int argc, char* argv[]) {
 			}
 		}
 		cout << count << endl;
-		
+		*/
+		if ( li.size() != 0){
+			slopemaxGapFinder(XLEFT,XRIGHT,YmidAxis,width, XmidPiont, ROIx, ROIy , li);
+		}
 		cout << "Left X Point: " << XLEFT << " Right X Point: " << XRIGHT << " X Mid Point: " << XmidPiont << endl; 
 		
-		int Angle = 18 - (638-XLEFT-XRIGHT)/10;
+		
+		int Angle = 18 + (2*XmidPiont-XLEFT-XRIGHT)/25;
+		if ( firstrunFlag == 0){
+			tempAngle = Angle;
+			firstrunFlag = 1;
+		}
+		
+		if (Angle < 0) { Angle = 0;}
+		
+		if ((abs(tempAngle - Angle) > 7) && (countBuff < 10)){
+			Angle = tempAngle;
+			countBuff++;
+			cout << countBuff << endl;
+		} else {
+			countBuff = 0;
+		}
+		tempAngle = Angle;
 		//imwrite("FastImage.png", image);
+		//namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.
+		//imshow( "Display window", image );
 		//----------------------------------------------------------//
+		
 		
 		
 		serialib LS; //the main class to access
@@ -214,7 +446,7 @@ int main(int argc, char* argv[]) {
 		}
 		Ret=LS.ReadString(Buffer,'\n',128,5000);                                // Read a maximum of 128 characters with a timeout of 5 seconds
 
-		string s = "2 " + to_string(Angle) + " 0#";
+		string s = "1 " + to_string(Angle) + " 0#";
 		char const *pchar = s.c_str();
 		Ret=LS.WriteString(pchar);                                           
 		if (Ret!=1) {                                                                                        

@@ -7,6 +7,7 @@
  ****************************************************************************/
  #include "Drive.h"
  #include "Comms.h"
+ #include "Sensors.h"
 
 /*****************************************************************************
  *                                 TypeDefs
@@ -24,10 +25,24 @@ typedef enum {
 typedef struct {
   
  STATE State;
- float CurrentSpeed;
- float CurrentServoPos;
+ IntersectionState InterState;
+ DriveCommands DC;
+ SensorBehaviour SB;
+ int CurrentSpeed;
+ int CurrentServoPos;
+ MESSAGE InMessage;
+ int OutMessage;
+ int ErrorFlag;
+ int CarPriority;
  
 }FSMVars;
+
+typedef struct{
+  int ID;
+  int Direction;
+  IntersectionState CarState;
+  
+}Car;
 
 /*****************************************************************************
  *                                 Defines
@@ -45,6 +60,8 @@ void DoPreDriveState();
 void DoDriveState();
 void InterWaitState();
 void DoErrorState();
+void GoThruIntersectBBY();
+void Wait();
+void Reset();
 
 #endif /* INCLUDES_MAIN_H_ */
-

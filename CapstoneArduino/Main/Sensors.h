@@ -13,12 +13,18 @@
   
  }SensorBehaviour;
 
+typedef struct{
+  unsigned int rSensor;
+  unsigned int lSensor;
+  
+ }SensorVals;
  /*****************************************************************************
  *                                 Defines
  ****************************************************************************/
 #define IRSlowThresh 100
 #define IRStopThresh 200
 #define IRPin A0
+#define IRPinL A15
 /*****************************************************************************
  *                             Function Prototypes
  ****************************************************************************/

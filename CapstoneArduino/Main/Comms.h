@@ -42,9 +42,7 @@ typedef struct {
  void InitComms();
  DriveCommands GetDriveCommands();
  void PingBB();
- void transmit(int message); 
- int receive();
- MESSAGE InterMessage(int NEWMessage);
- int MessageCreation(int InterState, int Direction);
+ void transmit(int InterState, int Direction); 
+ MESSAGE receive();
 
 #endif

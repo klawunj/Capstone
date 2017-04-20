@@ -118,36 +118,57 @@ DriveCommands GetDriveCommands(){
 }
 
 
- int receive(){  //Recieves message and returns value
-  if (radioRecieve.available()){
-    while (radioRecieve.available()){
-      radioRecieve.read(InMsg, 1);     
+  MESSAGE receive(){  //Recieves message and returns value
+  
+  MESSAGE IncomingMessage;
+   
+  int InState;
+   
+  if (radioReceive.available()){
+    while (radioReceive.available()){
+      radioReceive.read(InMsg, 1);     
     }
   }
 
   else{
-    
+    //Serial.println("Not Available");
     InMsg[0] = 0;
   }
-  return InMsg[0];
-}
+  
+  IncomingMessage.CarID = (InMsg[0]%128)/16;
+  InState = (InMsg[0]%16)/4;
+  IncomingMessage.CarDirection = InMsg[0]%4;
+ 
+  
+  if(InState == 1){
+    IncomingMessage.CarState = PROCEED;
+  }
 
+  else if(InState == 2){
+    IncomingMessage.CarState = CLEAR;
+  }
 
- void transmit(int message){  //Call with message to be transmitted
-  OutMsg[0] = message;
-  radioTransmit.write(OutMsg, 1);
-}
+  else if(InState == 3){
+    IncomingMessage.CarState = STOPPED;  
+  }
 
-int MessageCreation(int InterState, int Direction){
-  int FinalMessage = CarId*8 + InterState*4 + Direction; //makes the binary version of the required message breaks if inproper values are used
-  return FinalMessage;
-}
-
-
- MESSAGE InterMessage(int NewMessage){
-  MESSAGE IncomingMessage;
-  IncomingMessage.CarID = (NewMessage%64)/8;
-  IncomingMessage.CarState = (NewMessage%8)/4;
-  IncomingMessage.CarDirection = NewMessage%4;
+  else{
+    IncomingMessage.CarState = NOTNEAR;
+  }
+  
+  
   return IncomingMessage;
 }
+
+
+ void transmit(int InterState, int Direction){  //Call with message to be transmitted
+  
+  int FinalMessage = CarId*16 + InterState*4 + Direction; 
+  OutMsg[0] = FinalMessage;
+  //Serial.println(OutMsg[0]);
+  radioTransmit.write(OutMsg, 1);
+ 
+  
+}
+
+

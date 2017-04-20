@@ -17,10 +17,10 @@ typedef struct {
 
 typedef enum {
   
-  STOPPED = 0,
+  NOTNEAR = 0,
   PROCEED = 1,
   CLEAR = 2,
-  NOTNEAR = 3,
+  STOPPED = 3,
   BLOCKED = 4
    
 }IntersectionState;

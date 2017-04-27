@@ -252,6 +252,7 @@ int main(int argc, char* argv[]) {
 	VideoCapture capture(0);
     capture.set(CV_CAP_PROP_FRAME_WIDTH,640);
     capture.set(CV_CAP_PROP_FRAME_HEIGHT,480);
+	capture.set(CV_CAP_PROP_FOURCC, CV_FOURCC('H', '2', '6', '4'));
     if(!capture.isOpened()){
 	    cout << "Failed to connect to the camera." << endl;
     }
@@ -275,20 +276,30 @@ int main(int argc, char* argv[]) {
 	cout << image.rows << endl; // # Of rows in image
 	
 	int ROIx = 0;
-    int ROIy = (image.rows - 1)/8;
+    int ROIy = (image.rows - 1)/4;
     int width = image.cols - 1;
     int height = (image.rows - 1)/8;
 	
 	Rect roi(ROIx,ROIy,width,height);// set the ROI for the image
 	Mat imgROI = image(roi);
 	
+	// HSV algorithm
+	Mat imgThresholded, gray;
+	cvtColor(imgROI, gray, CV_BGR2GRAY);
+	cvtColor(imgROI, imgThresholded, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
+    inRange(imgThresholded, Scalar(0, 0, 190), Scalar(180, 255, 255), imgThresholded); //Threshold the image
+	imwrite("FastHSV.png", imgThresholded);
+	
 	// Canny algorithm
     Mat contours;
-    Canny(imgROI,contours,50,150);
+    Canny(imgThresholded,contours,50,150);
     Mat contoursInv;
     threshold(contours,contoursInv,128,255,THRESH_BINARY_INV);
 	
 	imwrite("FastContour.png", contoursInv);
+	
+	
+	
 	//---------------Probabilistic Hough Transform--------------//
 	// Create LineFinder instance
 	LineFinder ld;
@@ -303,13 +314,14 @@ int main(int argc, char* argv[]) {
     // Detect lines
 	vector<Vec4i> li= ld.findLines(contours);
 	
+	
 	double btheta = 15*(PI/180);// The Horizontal filter angle
 	ld.drawFilterHLines(image,btheta);
 	imwrite("FastHoughP.png", image);
 	//-----------------Find Intersection Points-----------------//
 	
 	int YmidAxis = ROIy;
-	int XmidPiont = width/2 + ROIx - 20;
+	int XmidPiont = width/2 + ROIx;
 	
 	// Middle of frame Reference
 	Point Pmid1(XmidPiont, image.rows - 1);        

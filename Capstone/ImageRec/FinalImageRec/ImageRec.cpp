@@ -5,7 +5,7 @@
 	g++ -std=c++0x `pkg-config --cflags --libs opencv` serialib.cpp ImageRec.cpp -o ImageRec
 	OR
 	g++ -std=c++0x -O2 `pkg-config --cflags --libs opencv` serialib.cpp ImageRec.cpp -o ImageRec ==> Optimized
-	
+	g++ -std=c++0x -O3 `pkg-config --cflags --libs opencv` serialib.cpp ImageRec.cpp -o ImageRec ==> Optimized
 	Execution:
 	./ImageRec original.bmp ==> Processing existing frame
 	OR
@@ -188,6 +188,7 @@ void slopemaxGapFinder (double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int 
 			}
 		}
 	}
+	
 	int lineMarker;
 	int X1,X2;
 	int GAP = 0;
@@ -212,20 +213,19 @@ void slopemaxGapFinder (double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int 
 		}
 	}
 	
-	if (lineMarker == 0){
+	if (lineMarker == 0){ 
 		XLEFT = 0.0;
 		XRIGHT = sortedLINES[0][0];
-		cout << sortedSlopeLINES[0] << endl;
 	}else if( lineMarker == LINES.size()){
 		XLEFT = sortedLINES[lineMarker-1][0];
 		XRIGHT = WIDTH + xSHIFT;
+	}else if( (lineMarker > LINES.size()) || (lineMarker < 0)){
+		//ERROR PREVENT SEGMENTATION FAULT
 	}else{
 		XLEFT = sortedLINES[lineMarker-1][0];
 		XRIGHT = sortedLINES[lineMarker][0];
 	}
-	
 }
-
 void intersectionFinder( double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int xMID, int xSHIFT, int ySHIFT , vector<Vec4i> LINES){
 	
 	// Intersection Finder 
@@ -329,6 +329,51 @@ void intersectionFinder( double &XLEFT, double &XRIGHT,int yAXIS ,int WIDTH, int
 }
 
 int main(int argc, char* argv[]) {
+	//-----------------Main Variables------------------//
+	// MISCELLANEOUS FLAGS, BUFFERS & TEMP VARS
+	int firstrunFlag = 0;
+	int countBuff = 0;
+	int prevAngle;
+	int Angle = 18;
+	int speed = 1;
+	int speedCounter = 0;
+	int prevSpeed = 1;
+	int cornerTRIGGER = 0;
+	int cornerSPEED = 1;
+	int cornerSPEEDthresh = 3;
+	
+	double XLEFT;
+	double XRIGHT;
+	double XRIGHT_PREV;
+	double XLEFT_PREV;
+	
+	//ROI VARS
+	int ROIx;
+	int ROIy;
+	int width;
+	int height;
+	
+	int COLORx;
+	int COLORy;
+	int COLORwidth;
+	int COLORheight;
+	
+	//IMPORTANT AXIS
+	int YmidAxis;
+	int XmidPiont;
+	
+	//COLOR VARS
+	int pixleSUMRED;
+	int pixleSUMGREEN;
+	int colorBuffRED = 0;
+	int colorBuffGREEN= 0;
+    int serialColor = 0;
+	int colorSENDbuff = 0;
+	int colorSENDTRIGGER = 0;
+	//SERIAL COMUNICATION 
+	int Ret,Ret2;
+	char Buffer[128];
+	string s;
 	
 	//-----------------Capture & Prepare Image------------------//
 	// Load the image file and check for success
@@ -340,38 +385,46 @@ int main(int argc, char* argv[]) {
     if(!capture.isOpened()){
 	    cout << "Failed to connect to the camera." << endl;
     }
-	int countBuff = 0;
-	int tempAngle;
-	int firstrunFlag = 0;
 	
-	//int frames=10;
-	while(1){
-	
+	while(true){
 		Mat image;
+		//for (int i=0; i < 3; i++){capture >> image;} //Filter through Camera Buffer for a better image
 		capture >> image;
 		if(image.empty()){
 			cout << "Failed to capture an image" << endl;
 			return -1;
 		}
-		
-		//cout << image.cols << endl; // # Of cols in image
-		//cout << image.rows << endl; // # Of rows in image
-		
-		int ROIx = 0;
-		int ROIy = (image.rows - 1)/8;
-		int width = image.cols - 1 - 40;
-		int height = (image.rows - 1)/8;
-		
-		Rect roi(ROIx,ROIy,width,height);// set the ROI for the image
+        
+		//Lane Detection ROI
+		ROIx = 0;
+		ROIy = (image.rows - 1)/8;
+		width = image.cols - 1;
+		height = (image.rows - 1)/8;
+        
+        Rect roi(ROIx,ROIy,width,height);// set the ROI for the image
 		Mat imgROI = image(roi);
+		
+        //Color Detection ROI
+        COLORx = (image.cols - 1)/3;
+        COLORy = 0;
+        COLORwidth = (image.cols - 1)/3;
+        COLORheight = (image.rows - 1);
+        
+        Rect Croi(COLORx,COLORy,COLORwidth,COLORheight);// set the ROI for the image
+		Mat COLORROI = image(Croi);
+		
+		// HSV algorithm
+		Mat imgHSVFilter, gray;
+		cvtColor(imgROI, gray, CV_BGR2GRAY);
+		cvtColor(imgROI, imgHSVFilter, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
+		inRange(imgHSVFilter, Scalar(0, 0, 190), Scalar(180, 255, 255), imgHSVFilter); //Threshold the image
 		
 		// Canny algorithm
 		Mat contours;
-		Canny(imgROI,contours,50,150);
+		Canny(imgHSVFilter,contours,50,150);
 		Mat contoursInv;
 		threshold(contours,contoursInv,128,255,THRESH_BINARY_INV);
-		
-		//imwrite("FastContour.png", contoursInv);
+
 		//---------------Probabilistic Hough Transform--------------//
 		// Create LineFinder instance
 		LineFinder ld;
@@ -385,75 +438,173 @@ int main(int argc, char* argv[]) {
 		
 		// Detect lines
 		vector<Vec4i> li= ld.findLines(contours);
-		
-		double btheta = 15*(PI/180);// The Horizontal filter angle
-		ld.drawFilterHLines(image,btheta);
-		//imwrite("FastHoughP.png", image);
 		//-----------------Find Intersection Points-----------------//
-		int YmidAxis = ROIy;
-		int XmidPiont = width/2 + ROIx;
-		
-		double XLEFT = 0.0 + ROIx;
-		double XRIGHT = width + ROIx;
-		/*
-		int count = 0;
-		
-		while ( XLEFT == 0.0 + ROIx || XRIGHT == width + ROIx){
-			intersectionFinder(XLEFT,XRIGHT,YmidAxis + count,width, XmidPiont, ROIx, ROIy , li);
-			count++;
-			if (count >= height){
-				break;
-			}
+		YmidAxis = ROIy;
+		XmidPiont = width/2 + ROIx;
+
+		if (firstrunFlag == 0){
+			XLEFT_PREV = 0.0 + ROIx;
+			XRIGHT_PREV = width + ROIx;
 		}
-		cout << count << endl;
-		*/
-		if ( li.size() != 0){
+		
+		XLEFT = XLEFT_PREV;
+		XRIGHT = XRIGHT_PREV;
+		
+		if (!li.empty()){
 			slopemaxGapFinder(XLEFT,XRIGHT,YmidAxis,width, XmidPiont, ROIx, ROIy , li);
 		}
-		cout << "Left X Point: " << XLEFT << " Right X Point: " << XRIGHT << " X Mid Point: " << XmidPiont << endl; 
+		//cout << "Left X Point: " << XLEFT << " Right X Point: " << XRIGHT << " X Mid Point: " << XmidPiont << endl; 
+		//---------------------Angle Calculation----------------------//
+		Angle = 18 + (2*XmidPiont-XLEFT-XRIGHT)/22; // Main Turning Algorithm
+		if (Angle < 0) { Angle = 0;}
+		if (Angle > 36) { Angle = 36;}
 		
-		
-		int Angle = 18 + (2*XmidPiont-XLEFT-XRIGHT)/25;
-		if ( firstrunFlag == 0){
-			tempAngle = Angle;
-			firstrunFlag = 1;
+		if (firstrunFlag == 0){
+			prevAngle = Angle;
 		}
 		
-		if (Angle < 0) { Angle = 0;}
-		
-		if ((abs(tempAngle - Angle) > 7) && (countBuff < 10)){
-			Angle = tempAngle;
+		//Angle Buffer Logic
+		if ((abs(prevAngle - Angle) > 12) && (countBuff < 20)) { // To Catch YUUUGE turning changes
+			Angle = prevAngle;
 			countBuff++;
-			cout << countBuff << endl;
+			//cout << "Buff: " << countBuff << endl;
 		} else {
 			countBuff = 0;
 		}
-		tempAngle = Angle;
-		//imwrite("FastImage.png", image);
-		//namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.
-		//imshow( "Display window", image );
-		//----------------------------------------------------------//
 		
+		/*
+		if ((prevAngle <= 4) || (prevAngle >= 16*2)) {// Sticky turning for the tight corners
+			cornerTRIGGER = 1;
+			if(abs(prevAngle - Angle) > 9){
+				if (prevAngle <= 4){
+					Angle = 0;
+				} else {
+					Angle = 36;
+				}
+			}
+		} else {
+			cornerTRIGGER = 0;
+		}*/
 		
+        //---------------------Color Detection----------------------//
+        Mat imgHSV;
+        cvtColor(COLORROI, imgHSV, COLOR_BGR2HSV); //Convert the captured frame from BGR to HSV
+        
+		//RED
+		Mat mask1, mask2;
+        inRange(imgHSV, Scalar(0, 100, 100), Scalar(10, 255, 255), mask1); //Threshold the image
+        inRange(imgHSV, Scalar(163, 100, 100), Scalar(179, 255, 255), mask2);
+        
+        Mat imgThresholded = mask1 | mask2;
+        
+        pixleSUMRED = 0;
+        
+        for (int i=0; i<imgThresholded.rows; i++){
+            for (int j=0; j<imgThresholded.cols; j++){
+                if (imgThresholded.at<uchar>(i,j) == 255){
+                    pixleSUMRED++;
+                }
+            }
+        }
 		
+		//GREEN
+        inRange(imgHSV, Scalar(45, 100, 100), Scalar(92, 255, 255), imgThresholded); //Threshold the image
+		
+		pixleSUMGREEN = 0;
+        
+        for (int i=0; i<imgThresholded.rows; i++){
+            for (int j=0; j<imgThresholded.cols; j++){
+                if (imgThresholded.at<uchar>(i,j) == 255){
+                    pixleSUMGREEN++;
+                }
+            }
+        }
+		
+		//Color Detection Logic
+		if ((pixleSUMRED > 2000) && (colorSENDTRIGGER != 1)){
+            colorBuffRED++;
+			cout << "RED DETECTED" << endl;
+        } else if ((pixleSUMGREEN > 2000) && (colorSENDTRIGGER != 1)){
+			colorBuffGREEN++;
+			cout << "GREEN DETECTED" << endl;
+		} else {
+            colorBuffRED = 0;
+			colorBuffGREEN = 0;
+            serialColor = 0;
+			colorSENDbuff = 0;
+			cout << "NO RED OR GREEN" << endl;
+        }
+		
+        if (colorBuffRED > 1){
+            serialColor = 1;
+			colorSENDbuff++;
+        }
+        if (colorBuffGREEN > 1){
+            serialColor = 2;
+			colorSENDbuff++;
+        }
+		
+		if (colorSENDbuff >= 2){
+			colorSENDTRIGGER = 1;
+		}
+		//------------------Speed Calibration----------------------//
+		/*
+		if (Angle <= 4 && Angle > 16*2){
+			speed = 1;
+		} else if ( Angle > 16 && Angle < 21) {
+			speed = 2;
+		} else {
+			speed = 1;
+		}
+        */
+		/*
+		if (abs(prevAngle - Angle) <= 1){// Constant Turning Angle ups speed
+			speedCounter++;
+		} else {
+			speedCounter = 0;
+		}
+		
+		if ((speedCounter > 4) && (cornerTRIGGER != 1)){ 
+			speed = 2;
+		} else if ((speedCounter > 4) && (cornerTRIGGER == 1) && (cornerSPEEDthresh < 4) ) {
+			speed = 2;
+			cornerSPEEDthresh++;
+		} else {
+			speed = 1;
+			cornerSPEEDthresh = 0;
+		}*/
+		//------------------Serial Communication----------------------//
 		serialib LS; //the main class to access
-		int Ret;
-		char Buffer[128];
+		//int Ret,Ret2;
+		//char Buffer[128];
+		
+        s = to_string(speed) + " " + to_string(Angle) + " " + to_string(serialColor) + "#";
+        char const *pchar = s.c_str();
 
 		Ret= LS.Open(DEVICE_PORT,9600);
-		if (Ret!=1){
-		  return 0;
+		if ((firstrunFlag == 0) || (((prevAngle != Angle) || (serialColor != 0) || (prevSpeed != speed)) && (colorSENDTRIGGER != 1))){ //Sends only useful info, no repeats
+			cout << ":)" << endl;
+			Ret2=LS.WriteString(pchar);	
+		} else if (colorSENDTRIGGER == 1){
+			Ret=LS.ReadString(Buffer,'\n',128,500); 
+			cout << "READING" << endl;
+			if (Ret>0){
+				colorSENDTRIGGER = 0;
+				colorBuffRED = 0;
+				colorBuffGREEN = 0;
+				serialColor = 0;
+				colorSENDbuff = 0;
+				cout << "GOTEM!!!!!!!" << endl;
+				cout << ":)" << endl;
+				Ret2=LS.WriteString(pchar);	
+			}
 		}
-		Ret=LS.ReadString(Buffer,'\n',128,5000);                                // Read a maximum of 128 characters with a timeout of 5 seconds
-
-		string s = "1 " + to_string(Angle) + " 0#";
-		char const *pchar = s.c_str();
-		Ret=LS.WriteString(pchar);                                           
-		if (Ret!=1) {                                                                                        
-			return Ret;                                                         
-		}
+		prevSpeed = speed;
+		prevAngle = Angle;
+		//cout << Angle << endl;
+		//cout << Speed << endl;		
 		cout << s << endl;
-		
+		firstrunFlag = 1;
 		LS.Close();
 	}
 	return 0;

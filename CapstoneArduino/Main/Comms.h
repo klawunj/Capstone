@@ -29,13 +29,13 @@ typedef enum {
 typedef struct {
 
   int CarID;
-  int CarState;
+  IntersectionState CarState;
   int CarDirection;
 }MESSAGE;
 /*****************************************************************************
  *                                 Defines
  ****************************************************************************/
-#define CarId 3
+#define CarId 2
  /*****************************************************************************
  *                             Function Prototypes
  ****************************************************************************/
@@ -44,5 +44,6 @@ typedef struct {
  void PingBB();
  void transmit(int InterState, int Direction); 
  MESSAGE receive();
+ void FlushSerial();
 
 #endif

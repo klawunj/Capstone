@@ -5,13 +5,13 @@
  /*****************************************************************************
  *                             Global Variables
  ****************************************************************************/
- int count;
-
+ 
+int count;
   /*****************************************************************************
  *                                 Functions
  ****************************************************************************/
 
-void InitSensors(){
+ void InitSensors(){
   pinMode(IRPinR, INPUT);
   pinMode(IRPinL, INPUT);
   count = 0;
@@ -42,12 +42,12 @@ void InitSensors(){
   }
     
 
-  if(count >= 2){
+  if(count >= 3){
     output = STOP;
   }
   //useless code below since code reads anything other than stop as keep going, change if we implement more speeds
-  else if(count == 1){
-    output = SLOWDOWN;
+  else if(count >= 1){
+    output = NODETECT;
   }
 
   else{
@@ -57,3 +57,9 @@ void InitSensors(){
   return output;
 
  }
+
+ 
+ 
+
+  
+

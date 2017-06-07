@@ -12,10 +12,11 @@
  ****************************************************************************/
  int InMsg[1];
  int OutMsg[1];
- RF24 radioRecieve(9,10);
+ RF24 radioReceive(9,10);
  RF24 radioTransmit(5,6);
- const uint64_t pipe1 = 0xE8E8F0F0E1LL;
- const uint64_t pipe2 = 0xF8F8E0E0F2LL;
+ const uint64_t pipe2 = 0xE8E8F0F0E1LL;
+ const uint64_t pipe1 = 0xF8F8E0E0F2LL;
+
  
 
  /*****************************************************************************
@@ -24,10 +25,10 @@
 
  void InitComms(){
   Serial2.begin(9600);
-  radioRecieve.begin();
+  radioReceive.begin();
   radioTransmit.begin();
-  radioRecieve.openReadingPipe(1,pipe2);
-  radioRecieve.startListening();
+  radioReceive.openReadingPipe(1,pipe2);
+  radioReceive.startListening();
   radioTransmit.openWritingPipe(pipe1);
   InMsg[0] = 0;
   OutMsg[0] = 0;
@@ -35,6 +36,7 @@
 
 void PingBB(){
   Serial2.write("\n");
+  FlushSerial();
 }
 
 DriveCommands GetDriveCommands(){
@@ -53,18 +55,19 @@ DriveCommands GetDriveCommands(){
   bool flag = 0;//ensure that full message is only printed once
   bool ping = 1;
 
-  while (1){
+  
 
-    if(ping == 1){
-      PingBB();
-    }
+  while (1){
     
     if(Serial2.available()){
+      
       inputBuffer = Serial2.read();
       ping = 0;
 
       conIB = inputBuffer.toInt();
       conIB = conIB - 48; //convert ascii values to usable numbers
+
+    
 
        //If there is a space, switch which variable written to
       if(conIB == -16){
@@ -118,7 +121,7 @@ DriveCommands GetDriveCommands(){
 }
 
 
-  MESSAGE receive(){  //Recieves message and returns value
+ MESSAGE receive(){  //Recieves message and returns value
   
   MESSAGE IncomingMessage;
    
@@ -138,6 +141,13 @@ DriveCommands GetDriveCommands(){
   IncomingMessage.CarID = (InMsg[0]%128)/16;
   InState = (InMsg[0]%16)/4;
   IncomingMessage.CarDirection = InMsg[0]%4;
+
+  if(IncomingMessage.CarDirection != 1 || IncomingMessage.CarDirection!= 2){
+    IncomingMessage.CarID = 0;
+    IncomingMessage.CarState = NOTNEAR;
+    IncomingMessage.CarDirection = 0;
+    return IncomingMessage;
+  }
  
   
   if(InState == 1){
@@ -165,10 +175,21 @@ DriveCommands GetDriveCommands(){
   
   int FinalMessage = CarId*16 + InterState*4 + Direction; 
   OutMsg[0] = FinalMessage;
-  //Serial.println(OutMsg[0]);
   radioTransmit.write(OutMsg, 1);
  
   
 }
+
+void FlushSerial(){
+  char flushed;
+  
+  if(Serial2.available()){
+    while(Serial2.available()){
+      flushed = Serial2.read();
+    }
+  }
+  
+}
+
 
 

@@ -4,6 +4,7 @@
  ****************************************************************************/
 #include "Main.h"
 #include "Arduino.h"
+
  /*****************************************************************************
  *                             Global Variables
  ****************************************************************************/
@@ -12,6 +13,9 @@ FSMVars FSM;
 Car CarPark[4] = {};
 unsigned long CurrentTime;
 unsigned long StartTime;
+unsigned long ProceedStartTime;
+unsigned long CurrentProceedTime;
+unsigned long TimingThreshold;
 int Priority;
 int flag;
 
@@ -19,6 +23,8 @@ int flag;
  *                                 Functions
  ****************************************************************************/
  void InitMain(){
+  
+ 
   FSM.State = STANDBY;
   FSM.InterState = NOTNEAR;
   FSM.CurrentSpeed = 0;
@@ -30,13 +36,13 @@ int flag;
   FSM.ErrorFlag = 0;
   FSM.InMessage.CarID = 0;
   FSM.CarPriority = 0;
+  TimingThreshold = 2000;
   InitDrive();
   InitComms();
   InitSensors();
  }
 
-void DoStandByState(){
-  Serial.println("StandBy");
+ void DoStandByState(){
   SetSpeed(0);
   SetSteering(18);
 
@@ -47,12 +53,11 @@ void DoStandByState(){
  }
 
  void DoPreDriveState(){
-  Serial.println("PreDrive");
-  FSM.SB = getSensorBehaviour();
+  //FSM.SB = getSensorBehaviour();
   FSM.DC = GetDriveCommands();
   
   if(FSM.SB == NODETECT && FSM.DC.Speed > 0){
-    SetSpeed(3);
+    SetSpeed(1);
     SetSteering(FSM.DC.Turn);
     FSM.CurrentSpeed = FSM.DC.Speed;
     FSM.CurrentServoPos = FSM.DC.Turn;
@@ -62,15 +67,15 @@ void DoStandByState(){
  }
  
  void DoDriveState(){
-  Serial.println("Drive");
+  //Serial.println("Drive");
   FSM.SB = getSensorBehaviour();
   FSM.DC = GetDriveCommands();
 
   if(FSM.SB != NODETECT){
     SetSpeed(0);
-    SetSteering(18);
     FSM.CurrentSpeed = 0;
-    FSM.CurrentServoPos = 18;
+    FlushSerial();
+    Serial.println("Detected1");
   }
 
 
@@ -79,14 +84,40 @@ void DoStandByState(){
     SetSteering(FSM.DC.Turn);
     FSM.CurrentSpeed = FSM.DC.Speed;
     FSM.CurrentServoPos = FSM.DC.Turn;
-    Serial.println(FSM.DC.Speed);
+    //Serial.println(FSM.DC.Speed);
     Serial.println(FSM.DC.Turn);
+    Serial.println(FSM.DC.Direction);
     Serial.println(" ");
   }
 
   if(FSM.DC.Direction != 0){
+    Serial.println("Stopping");
+    ProceedStartTime = millis();
+    CurrentProceedTime = millis();
+    TimingThreshold = 1500;
     FSM.CarPriority = FSM.DC.Direction;
-    delay(1000);
+
+    while((CurrentProceedTime - ProceedStartTime) <= TimingThreshold){
+      CurrentProceedTime = millis();
+      FSM.SB = getSensorBehaviour();
+
+      if(FSM.SB != NODETECT){
+        Serial.println("Detected2");
+        SetSpeed(0);
+        if((CurrentProceedTime - ProceedStartTime) >= 500){
+          ProceedStartTime = millis();
+          CurrentProceedTime = millis();          
+        }
+         
+      }
+      
+      else{
+        SetSpeed(1);
+      }
+      
+    }
+    Serial.println("Interwait");
+
     FSM.State = INTERWAIT;
     FSM.InterState = STOPPED;
     StartTime = millis();
@@ -94,6 +125,7 @@ void DoStandByState(){
     SetSteering(18);
     FSM.CurrentSpeed = 0;
     FSM.CurrentServoPos = 18;
+    FlushSerial();
   }
   
   
@@ -142,7 +174,7 @@ void DoStandByState(){
       //if the car is in the opposite direction intersection is blocked
       else{
         FSM.InterState = BLOCKED; 
-        Wait(); 
+        waitBitch(); 
       }    
     }
 
@@ -169,13 +201,13 @@ void DoStandByState(){
   }
 
     //check to make sure car has waited for over 2 seconds
-    if(Diff >= 2000){
-
+    if(Diff >= 1500){
+      Serial.println("Timeout at intersection");
       //check through all elements of the array
       for( int j = 0; j < 4; j++){
-
+       
         //if an array element is 0
-        if(CarPark[j].ID == 0){
+        if(CarPark[j].ID == 0 || CarPark[3].ID != 0 ){
 
           //if the first array element is 0 then no other cars are near therefore go
           if(j == 0){
@@ -193,7 +225,7 @@ void DoStandByState(){
             }
             else{
               FSM.InterState = BLOCKED;
-              Wait();
+              waitBitch();
             }
             break;
             
@@ -214,22 +246,59 @@ void DoStandByState(){
   }
 
   void GoThruIntersectBBY(){
-     transmit(FSM.InterState, FSM.DC.Direction);
-     SetSpeed(1);
-     SetSteering(18);
-     delay(2000);
-     FSM.InterState = CLEAR;
-     transmit(FSM.InterState, FSM.DC.Direction);
-     FSM.InterState = NOTNEAR;
-     FSM.State = DRIVE;
-     memset(CarPark,0,4); 
+
+    Serial.println("Proceeding");
+    
+    ProceedStartTime = millis();
+    CurrentProceedTime = millis();
+    TimingThreshold = 2000;
+
+    transmit(FSM.InterState, FSM.DC.Direction);
+    SetSpeed(1);
+    SetSteering(18);
+
+    while((CurrentProceedTime - ProceedStartTime) <= TimingThreshold){
+      CurrentProceedTime = millis();
+      FSM.SB = getSensorBehaviour();
+
+      if(FSM.SB != NODETECT){
+        Serial.println("Detected3");
+        SetSpeed(0);
+        if((CurrentProceedTime - ProceedStartTime) >= 900){
+          ProceedStartTime = millis();
+          CurrentProceedTime = millis();
+          TimingThreshold = 1000;          
+        }
+         
+      }
+      
+      else{
+        SetSpeed(1);
+      }
+    
+   
+    }
+    
+    FSM.InterState = CLEAR;
+    transmit(FSM.InterState, FSM.DC.Direction);
+    FSM.DC.Direction = 0;
+    FSM.InterState = NOTNEAR;
+    FSM.State = DRIVE;
+    TimingThreshold = 2000;
+    for(int p = 0; p <= 5; p++){
+      PingBB();
+    }
+    Serial.println("Pinged");
+    PingBB();
+    memset(CarPark,0,4);
     
   }
   
-   void Wait(){
+   void waitBitch(){
+    Serial.println("waiting passive-aggressively");
     unsigned long WaitTime = millis();
     unsigned long PassTime = millis();
-    while(WaitTime - PassTime < 2000){
+    while((WaitTime - PassTime) < 2000){
       FSM.InMessage = receive();
       PassTime = millis();
       if(FSM.InMessage.CarState == CLEAR){
@@ -282,3 +351,4 @@ void DoStandByState(){
  void Reset(){
   InitMain();
  }
+

@@ -31,9 +31,9 @@
 /*****************************************************************************
  *                                 Defines
  ****************************************************************************/
-#define motorpin 9
-#define servopin 10
-#define MaxSpeed 45
+#define motorpin 10
+#define servopin 9
+#define MaxSpeed 5
 #define MinSpeed 0
 #define MaxRightServoPos 36
 #define MaxLeftServoPos 0

@@ -34,6 +34,7 @@ typedef struct {
  int OutMessage;
  int ErrorFlag;
  int CarPriority;
+
  
 }FSMVars;
 
@@ -43,6 +44,8 @@ typedef struct{
   IntersectionState CarState;
   
 }Car;
+
+
 
 /*****************************************************************************
  *                                 Defines
@@ -61,7 +64,8 @@ void DoDriveState();
 void InterWaitState();
 void DoErrorState();
 void GoThruIntersectBBY();
-void Wait();
+void waitBitch();
 void Reset();
 
 #endif /* INCLUDES_MAIN_H_ */
+

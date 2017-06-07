@@ -81,130 +81,129 @@ PIController SteeringController;
     UnMappedServoPos = MaxLeftServoPos;
   }
 
-  MappedServoPos = UnMappedServoPos + 26; //conversion factor actual center is 30
+  MappedServoPos = UnMappedServoPos + 26; //conversion factor
 
   Steering.write(MappedServoPos);
   
  }
 
 //if mode = 0 speed control, if mode = 1 steering control
- int DriveControl(int NewVal, int CurrentVal, ControlMode Mode){
-
-  int error;
-  float KpTerm;
-  float KiTerm;
-  float KdTerm;
-  float der;
-  int output;
-
- 
-  if((NewVal - CurrentVal) < 0){
-    if(Mode == SPEED){
-      
-      if(NewVal != SpeedController.OldSetpoint){
-          SpeedController.StartValue = (90 - CurrentVal);
-      }
-      
-      error = (90 - NewVal) - (90 - CurrentVal);
-    
-    }
-
-    else{
-      
-      if(NewVal != SteeringController.OldSetpoint){
-          SteeringController.StartValue = (MaxRightServoPos - CurrentVal);
-      }
-
-      error = (MaxRightServoPos - NewVal) - (MaxRightServoPos - CurrentVal);
-    }
-  }
-
-  else{
-    if(Mode == SPEED){
-      if(NewVal != SpeedController.OldSetpoint){
-        SpeedController.StartValue = CurrentVal;
-      }
-    }
-
-    else{
-      if(NewVal != SteeringController.OldSetpoint){
-        SteeringController.StartValue = CurrentVal;
-      } 
-    }
-
-    
-    error = NewVal - CurrentVal;  
-    
-  }
-  if(error >= 3){
-    if(Mode == SPEED){
-      SpeedController.previousIntegral += error*SpeedController.looptime;
-      der = (error - SpeedController.previousError)/SpeedController.looptime;
-
-      KpTerm = SpeedController.Kp*error;
-      KiTerm = SpeedController.Ki*SpeedController.previousIntegral;
-      KdTerm = SpeedController.Kd*der;
-      
-      output = SpeedController.StartValue + KpTerm + KiTerm + KdTerm;
-
-      SpeedController.previousError = error;
-      
-      if((NewVal - CurrentVal) < 0){
-
-        if((90 - output) <= 2){
-          output = 0;
-        }
-        
-        else{
-          output = (90 - output);
-        }
-        
-        SetSpeed(output);
-        return output;
-        
-      }
-      
-      else{
-        
-        if(output <= 2){
-          output = 0;
-        }
-
-        SetSpeed(output);
-        return output;
-      }
-    
-    }
-    
-    else{
-      SteeringController.previousIntegral += error*SteeringController.looptime;
-      der = (error - SteeringController.previousError)/SteeringController.looptime;
-
-      KpTerm = SteeringController.Kp*error;
-      KiTerm = SteeringController.Ki*SteeringController.previousIntegral;
-      KdTerm = SteeringController.Kd*der;
-      
-      output = SteeringController.StartValue + KpTerm + KiTerm + KdTerm;
-
-      SpeedController.previousError = error;
-   
-
-      if((NewVal - CurrentVal) < 0){
-
-        output = (MaxRightServoPos - output);
-
-        SetSteering(output);
-        return output;
-        
-      }
-      
-      else{
-
-        SetSteering(output);
-        return output;
-      }
-    }
-  }
- 
- }
-
+// int DriveControl(int NewVal, int CurrentVal, ControlMode Mode){
+//
+//  int error;
+//  float KpTerm;
+//  float KiTerm;
+//  float KdTerm;
+//  float der;
+//  int output;
+//
+// 
+//  if((NewVal - CurrentVal) < 0){
+//    if(Mode == SPEED){
+//      
+//      if(NewVal != SpeedController.OldSetpoint){
+//          SpeedController.StartValue = (90 - CurrentVal);
+//      }
+//      
+//      error = (90 - NewVal) - (90 - CurrentVal);
+//    
+//    }
+//
+//    else{
+//      
+//      if(NewVal != SteeringController.OldSetpoint){
+//          SteeringController.StartValue = (MaxRightServoPos - CurrentVal);
+//      }
+//
+//      error = (MaxRightServoPos - NewVal) - (MaxRightServoPos - CurrentVal);
+//    }
+//  }
+//
+//  else{
+//    if(Mode == SPEED){
+//      if(NewVal != SpeedController.OldSetpoint){
+//        SpeedController.StartValue = CurrentVal;
+//      }
+//    }
+//
+//    else{
+//      if(NewVal != SteeringController.OldSetpoint){
+//        SteeringController.StartValue = CurrentVal;
+//      } 
+//    }
+//
+//    
+//    error = NewVal - CurrentVal;  
+//    
+//  }
+//  if(error >= 3){
+//    if(Mode == SPEED){
+//      SpeedController.previousIntegral += error*SpeedController.looptime;
+//      der = (error - SpeedController.previousError)/SpeedController.looptime;
+//
+//      KpTerm = SpeedController.Kp*error;
+//      KiTerm = SpeedController.Ki*SpeedController.previousIntegral;
+//      KdTerm = SpeedController.Kd*der;
+//      
+//      output = SpeedController.StartValue + KpTerm + KiTerm + KdTerm;
+//
+//      SpeedController.previousError = error;
+//      
+//      if((NewVal - CurrentVal) < 0){
+//
+//        if((90 - output) <= 2){
+//          output = 0;
+//        }
+//        
+//        else{
+//          output = (90 - output);
+//        }
+//        
+//        SetSpeed(output);
+//        return output;
+//        
+//      }
+//      
+//      else{
+//        
+//        if(output <= 2){
+//          output = 0;
+//        }
+//
+//        SetSpeed(output);
+//        return output;
+//      }
+//    
+//    }
+//    
+//    else{
+//      SteeringController.previousIntegral += error*SteeringController.looptime;
+//      der = (error - SteeringController.previousError)/SteeringController.looptime;
+//
+//      KpTerm = SteeringController.Kp*error;
+//      KiTerm = SteeringController.Ki*SteeringController.previousIntegral;
+//      KdTerm = SteeringController.Kd*der;
+//      
+//      output = SteeringController.StartValue + KpTerm + KiTerm + KdTerm;
+//
+//      SpeedController.previousError = error;
+//   
+//
+//      if((NewVal - CurrentVal) < 0){
+//
+//        output = (MaxRightServoPos - output);
+//
+//        SetSteering(output);
+//        return output;
+//        
+//      }
+//      
+//      else{
+//
+//        SetSteering(output);
+//        return output;
+//      }
+//    }
+//  }
+// 
+// }
